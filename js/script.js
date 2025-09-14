@@ -1,32 +1,7 @@
 // =================
-// Utility Functions
-// =================
-
-// -----------
-// Random Helpers
-// -----------
-
-
-// -----------
-// DOM Helpers
-// -----------
-function createElement(tag, classNames = [], textContent = "") {
-    const el = document.createElement(tag);
-    classNames.forEach(cls => el.classList.add(cls));
-    el.textContent = textContent;
-    return el;
-}
-
-function createButton(classNames = [], textContent = "", onClick) {
-    const btn = createElement("button", classNames, textContent)
-    btn.addEventListener("click", onClick);
-    return btn;
-}
-
-// =================
 // Objects / Modules
 // =================
-
+// #region
 // Game constants (board size, mark representations, move codes, etc.)
 const constants = Object.freeze({
     BOARD_SIZE: 3,
@@ -35,7 +10,14 @@ const constants = Object.freeze({
     EMPTY_CELL: ' ',
     MOVE_OK: 0,
     CELL_OCCUPIED: 1,
-    OUT_OF_BOUNDS: 2
+    OUT_OF_BOUNDS: 2,
+});
+
+const messages = Object.freeze({
+    PLAYER_ONE_NAME: "Enter Player One's Name:",
+    PLAYER_TWO_NAME: "Enter Player Two's Name:",
+    DRAW_MESSAGE: "It's a draw! Good game!",
+    playerWon: (winningPlayer) => `${winningPlayer.getName()} wins! Congratulations!`
 });
 
 function createCell() {
@@ -50,13 +32,21 @@ function createCell() {
 }
 
 function createPlayer(name, mark) {
+    const getName = () => name;
+
+    const getMark = () => mark;
+
     let score = 0;
 
     const getScore = () => score;
 
     const incrementScore = () => ++score;
 
-    return { name, mark, getScore, incrementScore };
+    const changeName = (newName) => name = newName;
+
+
+
+    return { getName, getMark, getScore, incrementScore, changeName };
 }
 
 
@@ -92,10 +82,10 @@ const gameBoard = ((size) => {
     // Place the player's mark on the board, 
     // and maintain mark counters for each row, column and diagonal to detect a win
     const placeMark = (row, column, player) => {
-        board[row][column].setMark(player.mark);
+        board[row][column].setMark(player.getMark());
 
 
-        player.mark === constants.NOUGHT ? mark = 1 : mark = -1;
+        const mark = player.getMark() === constants.NOUGHT ? 1 : -1;
 
         rowMarks[row] += mark;
         colMarks[column] += mark;
@@ -157,9 +147,13 @@ const gameController = ((playerOneName = "Player One",
     };
     const getActivePlayer = () => activePlayer;
 
+    const changePlayerName = (playerNum, newName) => {
+        players[playerNum].changeName(newName);
+    }
+
     const printNewRound = () => {
         gameBoard.printBoard();
-        console.log(`${getActivePlayer().name}'s turn.`);
+        console.log(`${getActivePlayer().getName()}'s turn.`);
     };
 
     const printNewGame = () => {
@@ -177,14 +171,14 @@ const gameController = ((playerOneName = "Player One",
 
     const handleDraw = () => {
         gameBoard.printBoard();
-        console.log("It's a draw! Good game!");
-        startNewGame();
+        console.log(messages.DRAW_MESSAGE);
+        // startNewGame();
     }
 
     const handleWin = (winningPlayer) => {
         gameBoard.printBoard();
-        console.log(`${winningPlayer.name} wins! Congratulations!`);
-        startNewGame();
+        console.log(messages.playerWon(winningPlayer));
+        // startNewGame();
     }
 
     const playRound = (row, column) => {
@@ -197,16 +191,10 @@ const gameController = ((playerOneName = "Player One",
             return { valid: false, winner: null, draw: false };
         };
         console.log(
-            `Placing ${getActivePlayer().name}'s mark into row ${row}, column ${column}... `
+            `Placing ${getActivePlayer().getName()}'s mark into row ${row}, column ${column}... `
         );
         gameBoard.placeMark(row, column, getActivePlayer());
         turnCount++;
-
-        // check for draw
-        if (turnCount >= constants.BOARD_SIZE ** 2) {
-            handleDraw();
-            return { valid: true, winner: null, draw: true };
-        }
 
         // check for win
         const winningPlayer = gameBoard.checkWin(row, column, getActivePlayer());
@@ -214,7 +202,11 @@ const gameController = ((playerOneName = "Player One",
             handleWin(winningPlayer);
             return { valid: true, winner: winningPlayer, draw: false };
         }
-
+        // check for draw
+        else if (turnCount >= constants.BOARD_SIZE ** 2) {
+            handleDraw();
+            return { valid: true, winner: null, draw: true };
+        }
 
         // Switch player turn
         switchPlayerTurn();
@@ -232,7 +224,9 @@ const gameController = ((playerOneName = "Player One",
     // getActivePlayer for the UI version.
     return {
         playRound,
-        getActivePlayer
+        getActivePlayer,
+        changePlayerName,
+        startNewGame
     };
 })();
 
@@ -241,11 +235,10 @@ const gameController = ((playerOneName = "Player One",
 */
 const displayController = (() => {
     const boardDiv = document.querySelector(".board");
-    const playerTurnDiv = document.querySelector('.turn');
+    const playerTurnEl = document.querySelector('.turn');
+    const messageEl = document.querySelector('.message');
 
-
-
-    const updateDisplay = () => {
+    const updateDisplay = (message = '') => {
         // clear the board
         boardDiv.textContent = "";
 
@@ -254,7 +247,10 @@ const displayController = (() => {
         const activePlayer = gameController.getActivePlayer();
 
         // Display player's turn
-        playerTurnDiv.textContent = `${activePlayer.name}'s turn...`
+        playerTurnEl.textContent = `${activePlayer.getName()}'s turn...`
+
+        // Display a message if specified
+        if (message) messageEl.textContent = message;
 
         // Render board squares
         board.forEach((row, rowIndex) => {
@@ -272,20 +268,53 @@ const displayController = (() => {
     };
     // Add event listener for the board
     function clickHandlerBoard(e) {
-        const selectedRow = e.target.dataset.row;
-
         // Make sure a cell has been clicked and not the gaps in between
-        if (!selectedRow) return;
+        const cell = e.target.closest(".cell");
+        if (!cell) return;
 
-        gameController.playRound(selectedRow, selectedColumn);
+        const selectedRow = Number(cell.dataset.row);
+        const selectedColumn = Number(cell.dataset.column);
+
+        let gameState = gameController.playRound(selectedRow, selectedColumn);
+
+        if (!gameState.valid) {
+            return;
+        }
+        if (gameState.winner) {
+            updateDisplay(messages.playerWon(gameState.winner));
+            boardDiv.classList.add("disabled"); // disables all clicks inside boardDiv
+            return;
+        }
+        else if (gameState.draw) {
+            updateDisplay(messages.DRAW_MESSAGE);
+            boardDiv.classList.add("disabled"); // disables all clicks inside boardDiv
+            return;
+        }
+
         updateDisplay();
     }
     boardDiv.addEventListener("click", clickHandlerBoard);
 
+    const clickHandlerRestart = () => {
+        gameBoard.clearBoard();
+        gameController.startNewGame();
+        boardDiv.classList.remove("disabled");
+        messageEl.textContent = "";
+        updateDisplay();
+    }
+    const restartButton = document.querySelector(".restart");
+    restartButton.addEventListener("click", clickHandlerRestart);
+
+    const clickHandlerChangeNames = () => {
+        gameController.changePlayerName(0, window.prompt(messages.PLAYER_ONE_NAME, "Player One"));
+        gameController.changePlayerName(1, window.prompt(messages.PLAYER_TWO_NAME, "Player Two"));
+    }
+    const changeNamesButton = document.querySelector(".change-names");
+    changeNamesButton.addEventListener("click", clickHandlerChangeNames);
     // Initial render
     updateDisplay();
 })();
-
+// #endregion
 // =================
 // Data / State
 // =================
@@ -307,8 +336,10 @@ const displayController = (() => {
 // Main Execution Block / Script Body
 // =================
 
+// Console Tests
+// #region
 // --- Helper to separate games in console ---
-function newGameHeader(name) {
+/* function newGameHeader(name) {
     console.log(`\n===== ${name} =====\n--------------------------\n`);
 }
 
@@ -360,5 +391,5 @@ gameController.playRound(2, 2); // P1 → draw
 newGameHeader("Invalid Moves");
 gameController.playRound(0, 0); // P1
 gameController.playRound(0, 0); // P2 tries occupied cell
-gameController.playRound(3, 3); // P1 tries out-of-bounds
-
+gameController.playRound(3, 3); // P1 tries out-of-bounds */
+// #endregion
