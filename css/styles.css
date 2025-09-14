@@ -12,8 +12,7 @@
     box-sizing: border-box;
 
     /* Debug */
-    outline: 2px solid red;
-    font-size: 1.5rem;
+    /* outline: 2px solid red; */
 }
 
 html,
@@ -69,20 +68,54 @@ h6 {
     line-height: 1.2;
 }
 
-h1 {
-    font-size: var(--font-size-xl);
-}
-
-h2 {
-    font-size: 1.5rem;
-}
-
-h3 {
-    font-size: var(--font-size-lg);
-}
-
-p {
-    margin: 0 0 var(--spacing-md);
-}
-
 /* #endregion */
+
+h1 {
+    text-align: center;
+    font-size: 3rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.turn {
+    font-size: 1.75rem;
+    margin-top: 25px;
+
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+
+    padding: 50px 350px;
+}
+
+.board {
+
+    display: grid;
+    height: 500px;
+    width: 500px;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    border: 3px solid grey;
+    gap: 2px;
+    padding: 2px;
+
+
+    background-color: yellow;
+    margin: auto;
+}
+
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 5rem;
+    border: 2px solid grey;
+    background: lightyellow;
+    cursor: pointer;
+
+    font-family: 'Courier New', Courier, monospace
+}

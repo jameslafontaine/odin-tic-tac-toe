@@ -240,7 +240,50 @@ const gameController = ((playerOneName = "Player One",
 ** The displayController is responsible for controlling the display of the game state to the players
 */
 const displayController = (() => {
+    const boardDiv = document.querySelector(".board");
+    const playerTurnDiv = document.querySelector('.turn');
 
+
+
+    const updateDisplay = () => {
+        // clear the board
+        boardDiv.textContent = "";
+
+        // get the newest version of the board and player turn
+        const board = gameBoard.getBoard();
+        const activePlayer = gameController.getActivePlayer();
+
+        // Display player's turn
+        playerTurnDiv.textContent = `${activePlayer.name}'s turn...`
+
+        // Render board squares
+        board.forEach((row, rowIndex) => {
+            row.forEach((cell, colIndex) => {
+                const cellButton = document.createElement("button");
+                cellButton.classList.add("cell");
+                // Create data attributes to identify the row and column
+                cellButton.dataset.row = rowIndex;
+                cellButton.dataset.column = colIndex;
+
+                cellButton.textContent = cell.getMark();
+                boardDiv.appendChild(cellButton);
+            })
+        })
+    };
+    // Add event listener for the board
+    function clickHandlerBoard(e) {
+        const selectedRow = e.target.dataset.row;
+
+        // Make sure a cell has been clicked and not the gaps in between
+        if (!selectedRow) return;
+
+        gameController.playRound(selectedRow, selectedColumn);
+        updateDisplay();
+    }
+    boardDiv.addEventListener("click", clickHandlerBoard);
+
+    // Initial render
+    updateDisplay();
 })();
 
 // =================
