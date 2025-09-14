@@ -107,10 +107,10 @@ h2 {
 
 .container {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
 
-    padding: 50px 350px;
+    padding: 50px 500px;
 }
 
 .action-panel {

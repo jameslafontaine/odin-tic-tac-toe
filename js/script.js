@@ -13,6 +13,7 @@ const constants = Object.freeze({
     OUT_OF_BOUNDS: 2,
 });
 
+// Game messages
 const messages = Object.freeze({
     PLAYER_ONE_NAME: "Enter Player One's Name:",
     PLAYER_TWO_NAME: "Enter Player Two's Name:",
@@ -312,6 +313,7 @@ const displayController = (() => {
     }
     const changeNamesButton = document.querySelector(".change-names");
     changeNamesButton.addEventListener("click", clickHandlerChangeNames);
+
     // Initial render
     updateDisplay();
 })();
