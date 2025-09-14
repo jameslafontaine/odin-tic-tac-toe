@@ -250,7 +250,7 @@ const displayController = (() => {
         playerTurnEl.textContent = `${activePlayer.getName()}'s turn...`
 
         // Display a message if specified
-        if (message) messageEl.textContent = message;
+        messageEl.textContent = message;
 
         // Render board squares
         board.forEach((row, rowIndex) => {
@@ -278,6 +278,7 @@ const displayController = (() => {
         let gameState = gameController.playRound(selectedRow, selectedColumn);
 
         if (!gameState.valid) {
+            updateDisplay("Please specify a legal move.");
             return;
         }
         if (gameState.winner) {
